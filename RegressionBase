@@ -1,0 +1,88 @@
+#JOINING THE DATA BASES OF URBAN FORM
+library('DataExplorer')
+library('dplyr')
+library('caret')
+library('mlbench')
+library('Hmisc')
+library('randomForest')
+
+
+#OPENING THE DATABASES OF PCA_REGRESSION_DF
+
+fleet <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/fleet.rds")
+
+fleet_and_pop <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/fleet_and_pop.rds")
+
+area <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/area.rds")
+
+fuel <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/fuel.rds")
+
+landuse_mix_metrics <- read_csv(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/landuse_mix_metrics.csv")
+
+exp_density_ghsl_1975 <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/exp_density_ghsl_1975.rds")
+
+exp_density_ghsl_2014 <- readRDS(
+        "//storage6/usuario
+        s/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/exp_density_ghsl_2014.rds")
+
+`1970-2015_pop` <- readRDS("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/1970-2015_pop.rds")
+
+fuel <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/fuel.rds")
+
+pca_regression_df <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/pca_regression_df.rds")
+
+pib <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/pca_regression_df/pib.rds")
+
+commute_time_censo2010 <- readRDS(
+        "//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/commute_time_censo2010/commute_time_censo2010.rds")
+
+#### FILTERING FOR THE YEAR OF 2015 OR CLOSEST
+
+fuel2017 <- filter(fuel, year == 2017)
+pib2015 <- filter(pib, ano == 2015)
+fleet2015 <- filter(fleet, ANO == 2015)
+fleet_and_pop2015 <- filter(fleet_and_pop, ANO == 2015)
+
+### FILTERING FOR REPEATED VALUES
+
+fleet_and_pop2015 <- fleet_and_pop2015 %>% unique()
+fleet2015 <- fleet2015 %>% unique()
+pib2015 <- pib2015 %>% unique()
+
+## BRASILIA QUE FICARIA EM GOIANIA
+fleet_and_pop2015 <- joinedbase[-32,]
+
+
+#JOINING THE REMAINING BASES
+
+joinedbase <- exp_density_ghsl_1975 %>%
+     dplyr::left_join (exp_density_ghsl_2014, by = c( "code_muni")) %>%
+     dplyr::left_join(area, by = c( "code_muni")) %>%
+     dplyr::left_join(fuel2017, by = c("code_muni" = "code_urban_concentration")) %>%
+     dplyr::left_join(pib2015, by = c("code_muni" = "code_urban_concentration")) %>%
+     dplyr::left_join(fleet_and_pop2015, by = c("code_muni" = "code_urban_concentration")) %>%
+     dplyr::left_join(fleet2015, by = c("code_muni" = "code_urban_concentration")) %>%
+     dplyr::left_join(landuse_mix_metrics, by = c("code_muni")) %>%
+        dplyr::left_join(commute_time_censo2010, by = c("code_muni" = "code_urban_concentration"))
+
+
+#EXCLUDING REPEATED LINES
+
+joinedbase <- joinedbase[-c(179,180,181,135,136,137,187,188,189,69,70,71,35,36,37)]
+
+##EXCLUDING VARIABLES THAT ONLY INDICATE THE YEAR OF THE SAMPLE
+
+baseclean <- joinedbase %>% mutate(
+        code_muni=NULL, name_uca_case.x=NULL, name_uca_case.y=NULL, name_uca_case.x.x=NULL,
+        name_uca_case.y.y=NULL, ano.x=NULL,ano.y=NULL,fuel=NULL,year=NULL,ano=NULL,UF.x=NULL,
+        UF.y=NULL, ANO.y=NULL, ANO.x=NULL)
+        
